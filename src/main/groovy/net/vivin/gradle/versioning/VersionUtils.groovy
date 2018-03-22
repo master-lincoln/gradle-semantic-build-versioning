@@ -79,6 +79,10 @@ class VersionUtils {
         }
 
         if(!version.snapshot && hasUncommittedChanges()) {
+						println 'Uncommitted changes:'
+						getUncommittedChanges().each {
+							println it
+						}
             throw new BuildException('Cannot create a release version when there are uncommitted changes', null)
         }
 
@@ -197,13 +201,24 @@ class VersionUtils {
 
     public boolean hasUncommittedChanges() {
         try {
-            return new Git(repository)
-                .status().call()
-                .hasUncommittedChanges()
+					def status = new Git(repository)
+							.status().call()
+
+					return status.hasUncommittedChanges()
         } catch(GitAPIException e) {
             throw new BuildException("Unexpected error while determining repository status: ${e.message}", e)
         }
     }
+
+	public Set<String> getUncommittedChanges() {
+		try {
+			def status = new Git(repository).diff().call()
+
+			return status.toArray()
+		} catch(GitAPIException e) {
+			throw new BuildException("Unexpected error while determining repository status: ${e.message}", e)
+		}
+	}
 
     /**
      * @return the latest sem-ver tag that is pointing to the given argument and not filtered
